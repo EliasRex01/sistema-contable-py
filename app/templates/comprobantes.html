@@ -45,7 +45,6 @@ fetch('/clientes').then(r => r.json()).then(cs => {
   cli.innerHTML = cs.map(c => `<option value="${c.id}">${c.ruc} — ${c.razon}</option>`).join('');
   listar();
 });
-cli.onchange = listar;
 async function listar(){
   const rs = await (await fetch('/comprobantes/' + cli.value)).json();
   t.innerHTML = '<tr><th>ID</th><th>Número</th><th>Emisor</th><th>Rubro</th><th>Total</th><th>Estado</th><th></th></tr>' +
@@ -88,11 +87,11 @@ async function subirFoto(blob, nombre){
   bloquear(true, 'Evaluando nitidez y extrayendo datos…');
   try {
     const j = await (await fetch(`/comprobantes/${cli.value}/desde-imagen`, {method:'POST', body:fd})).json();
-    if (!j.ok && j.codigo === 'IMAGEN_BORROSA') {
+    if (!j.ok) {
       aviso.style.display='block';
-      aviso.innerHTML = '<b>⚠ ' + j.mensaje + '</b><br>Nitidez: ' + j.calidad.nitidez +
-        ' (mín. 100) · ' + j.calidad.ancho + 'x' + j.calidad.alto + '. Toma la foto de nuevo.';
-      out.textContent = JSON.stringify(j.calidad, null, 2);
+      aviso.innerHTML = '<b>⚠ ' + j.mensaje + '</b>' +
+        (j.calidad ? '<br>Nitidez: ' + j.calidad.nitidez + ' (mín. 100).' : '');
+      out.textContent = JSON.stringify(j.calidad || j.validacion || j, null, 2);
       return;
     }
     aviso.style.display='none';

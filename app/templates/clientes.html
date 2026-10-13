@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Clientes · Sistema Contable{% endblock %}
+{% block content %}
+<div class="card"><h2>Clientes</h2>
+<p class="ayuda">Cada cliente es un contribuyente (RUC) cuyas facturas se procesan.
+La contraseña de Marangatú se guarda cifrada; lo ideal es usar un acceso de <b>Tercero Autorizado</b>.</p>
+<p><button id="bnew">＋ Nuevo cliente</button></p>
+<table id="t"><tr><th>RUC</th><th>Nombre</th><th>Obligaciones</th><th></th></tr></table></div>
+<div class="card" id="fcard" style="display:none"><h2 id="ftitle">Cliente</h2>
+<form id="f">
+<input type="hidden" id="fid">
+<label>N° de RUC (sin dígito) <input id="ruc" placeholder="Ej. 5290956"></label>
+<label>Dígito verificador <input id="dv" maxlength="1" placeholder="Ej. 5"></label>
+<label>Nombre / Razón social <input id="raz"></label>
+<label>Obligaciones <input id="obl" value="211,715">
+<p class="ayuda">211 = IVA · 715 = IRP. Separa con coma si tiene ambas.</p></label>
+<label>Usuario Marangatú (RUC) <input id="usr"></label>
+<label>Contraseña Marangatú <input id="pwd" type="password"></label>
+<p><button>Guardar</button> <button id="bcancel" type="button">Cancelar</button></p></form></div>
+<div class="card"><h2>Proveedores conocidos</h2>
+<p class="ayuda">RUC de proveedores ya clasificados por rubro: el sistema usa esto para clasificar solo.</p>
+<table id="tp"><tr><th>RUC</th><th>Rubro</th><th>Deducible IRP</th></tr></table></div>
+<div class="card"><h2>Respuesta</h2><pre id="out">—</pre></div>
+<div id="overlay"><div class="spinner"></div><p>Guardando…</p></div>
+<script>
+const out = document.getElementById('out'), overlay = document.getElementById('overlay');
+function bloquear(on){ overlay.classList.toggle('visible', on);
+  document.querySelectorAll('button').forEach(b => b.disabled = on); }
+async function listar(){
+  const cs = await (await fetch('/clientes')).json();
+  t.innerHTML = '<tr><th>RUC</th><th>Nombre</th><th>Obligaciones</th><th></th></tr>' +
+    cs.map(c => `<tr><td><b>${c.ruc}</b></td><td>${c.razon}</td><td>${c.oblig}</td>
+      <td><button onclick="editar(${c.id})">Editar</button>
+      <button onclick="eliminar(${c.id})">Borrar</button></td></tr>`).join('');
+  const ps = await (await fetch('/clientes/proveedores')).json();
+  tp.innerHTML = '<tr><th>RUC</th><th>Rubro</th><th>Deducible IRP</th></tr>' +
+    (ps.map(p => `<tr><td>${p.ruc}</td><td>${p.rubro}</td><td>${p.deducible ? 'Sí' : 'No'}</td></tr>`).join('') || '<tr><td colspan="3">Aún no hay proveedores clasificados.</td></tr>');
+}
+bnew.onclick = () => { fid.value=''; f.reset(); obl.value='211,715';
+  ftitle.textContent='Nuevo cliente'; fcard.style.display='block'; };
+bcancel.onclick = () => fcard.style.display='none';
+async function editar(id){
+  const cs = await (await fetch('/clientes')).json();
+  const c = cs.find(x => x.id === id); if (!c) return;
+  fid.value = id; ruc.value = c.ruc; raz.value = c.razon; obl.value = c.oblig;
+  ftitle.textContent = 'Editar cliente'; fcard.style.display='block';
+  alert('Por seguridad vuelve a escribir el DV, el usuario y la contraseña de Marangatú.');
+}
+async function eliminar(id){
+  if (!confirm('¿Borrar el cliente? Solo se puede si no tiene comprobantes.')) return;
+  bloquear(true);
+  try { const j = await (await fetch('/clientes/'+id, {method:'DELETE'})).json();
+    out.textContent = JSON.stringify(j, null, 2); listar();
+  } catch(e) { out.textContent = 'No se pudo borrar (¿tiene comprobantes?).'; }
+  finally { bloquear(false); }
+}
+f.onsubmit = async e => {
+  e.preventDefault(); bloquear(true);
+  const body = {ruc:ruc.value, dv:dv.value, razon_social:raz.value, obligaciones:obl.value,
+    dnit_user:usr.value, dnit_pass:pwd.value, familiares:[]};
+  try {
+    const url = fid.value ? '/clientes/'+fid.value : '/clientes';
+    const r = await fetch(url, {method: fid.value?'PUT':'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    out.textContent = JSON.stringify(await r.json(), null, 2);
+    fcard.style.display='none'; listar();
+  } finally { bloquear(false); }
+};
+listar();
+</script>
+{% endblock %}

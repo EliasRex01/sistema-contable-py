@@ -14,15 +14,16 @@ app/core/security.py               AES-256 Fernet (cifrado pass DNIT)
 app/db/session.py | models.py      engine/SessionLocal/Base + Cliente, ProveedorRubro, Comprobante, LoteRG90
 app/db/init_db.py                  create_all (solo dev; prod = Alembic)
 app/modules/clientes/              schemas.py, service.py, router.py (clientes + proveedores por rubro)
-app/modules/comprobantes/router.py PUT /{id}/revision (valida formato, clasifica, topes), POST /{id}/rechazar, ABM (POST/PUT/DELETE), POST /{id}/desde-imagen (nitidez→OCR)
-app/modules/ingestion/             regex_py.py, xml_sifen.py (canal prioritario), pipeline.py (PyMuPDF/OpenCV/Tesseract), calidad.py (Laplaciano: aviso "no está clara")
+app/modules/clientes/router.py     ABM clientes (PUT/DELETE; borrado bloqueado con comprobantes) + proveedores
+app/modules/comprobantes/router.py PUT /{id}/revision, POST /{id}/rechazar, ABM (POST/PUT/DELETE), POST /{id}/desde-imagen (nitidez→OCR)
+app/modules/ingestion/             regex_py.py, xml_sifen.py (canal prioritario), pipeline.py (PyMuPDF/OpenCV/Tesseract+spa), calidad.py (nitidez), documento.py (¿es comprobante? RUC+timbrado/nro)
 app/modules/ingestion/             regex_py.py, xml_sifen.py (canal prioritario), pipeline.py (PyMuPDF/OpenCV/Tesseract)
 app/modules/validador/             timbrado.py (URLs/campos DNIT reales), clasificador.py (IVA/IRP), topes.py (Ley 6380/19), service.py (scraping headless), router.py (UI /validador + API)
 app/modules/rg90/                  generator.py (TXT tabulado), marangatu_bot.py (Playwright), router.py (exportar/presentar/lotes)
 app/modules/rpa/browser.py         launch_browser(): Chromium Playwright o Chrome/Edge del sistema (CDN bloqueado)
 app/modules/rpa/captcha.py         ensure_captcha(): 2captcha/capsolver vía CAPTCHA_* o False (manual/HITL)
 app/modules/auditoria/             router.py + templates (base/menu/auditoria/validador, paleta azul)
-app/modules/dashboard/router.py    dueño vistas HTML: / (panel+stats), /ingesta-ui, /comprobantes-ui (ABM+foto), /rg90-ui
+app/modules/dashboard/router.py    dueño vistas HTML: panel, cargar (asistente 3 pasos), comprobantes-ui, clientes-ui, ingesta-ui (masiva), rg90-ui (guiado). Cada página elige su cliente en su propio formulario.
 app/modules/rg90/                  generator.py (TXT tabulado), marangatu_bot.py (Playwright), router.py (exportar/presentar/lotes; /lotes antes que /{id}/{per})
 app/worker/tasks.py                ocr.process_file + auto-clasificación rubro (sigue PENDIENTE)
 tests/test_basico.py               5 tests sin BD ni red (regex, IVA, formato, topes, RG90)
@@ -80,6 +81,13 @@ código viejo (fantasma diagnosticado 2026-10-06).
 - UI: toda consulta lenta (DNIT/RPA, hasta ~2 min) usa spinner bloqueante de
   pantalla (`#overlay` en `base.html` + `bloquear(true/false)` en finally,
   botones deshabilitados mientras dura). Sin spinner no se entrega.
+- UX no técnicos: lenguaje simple (sin "ingesta/API"), asistentes por pasos
+  (`.pasos`), textos `.ayuda`, estados vacíos con siguiente acción, confirmar
+  borrados, cliente global recordado. Nada técnico en el nav (API solo en footer).
+- Foto: orden calidad → documento → OCR. Mensajes exactos: "La imagen no está
+  muy clara…" (IMAGEN_BORROSA) y "La imagen no pertenece a un comprobante
+  válido" (IMAGEN_NO_VALIDA). Tesseract por winget + `tessdata/spa` local
+  (ver `pipeline.py:24`, `.gitignore`: tessdata/ no se commitea).
 - No crear archivos salvo necesarios; preferir editar. Nuevos módulos =
   `router.py` + (`service.py`|`schemas.py`) + test en `tests/`.
 

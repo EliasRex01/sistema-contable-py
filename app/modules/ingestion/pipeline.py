@@ -23,7 +23,19 @@ def preprocess_voucher(img_path: str) -> np.ndarray:
 
 def ocr_image(img) -> str:
     try:
-        import pytesseract
-        return pytesseract.image_to_string(img, lang="spa")
+        import pytesseract, shutil, os
+        if not shutil.which("tesseract"):
+            for cand in (r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                         r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe"):
+                if os.path.exists(cand):
+                    pytesseract.pytesseract.tesseract_cmd = cand
+                    break
+        local_td = os.path.join(os.getcwd(), "tessdata", "spa.traineddata")
+        if os.path.exists(local_td) and not os.environ.get("TESSDATA_PREFIX"):
+            os.environ["TESSDATA_PREFIX"] = os.path.join(os.getcwd(), "tessdata")
+        try:
+            return pytesseract.image_to_string(img, lang="spa")
+        except Exception:
+            return pytesseract.image_to_string(img, lang="eng")
     except Exception as e:
         return f"[OCR no disponible: {e}]"

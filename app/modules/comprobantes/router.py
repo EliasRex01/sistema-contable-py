@@ -92,9 +92,10 @@ def baja(comp_id: int, db: Session = Depends(get_db)):
 
 @router.post("/{cliente_id}/desde-imagen", tags=["comprobantes"])
 def desde_imagen(cliente_id: int, file: UploadFile = File(...), db: Session = Depends(get_db)):
-    """Foto/upload → control de nitidez → OCR → borrador PENDIENTE.
+    """Foto/upload → nitidez → ¿es comprobante? → OCR → borrador PENDIENTE.
 
-    Si la imagen no está clara retorna el aviso sin procesar OCR.
+    Si la imagen no está clara, o no pertenece a un comprobante válido,
+    retorna el aviso sin procesar ni guardar nada.
     """
     import os
     from app.modules.ingestion.calidad import evaluar_imagen
@@ -114,5 +115,8 @@ def desde_imagen(cliente_id: int, file: UploadFile = File(...), db: Session = De
         creado = res.get(timeout=120)
     except Exception:
         creado = process_file(dest, cliente_id)
+    if not creado.get("ok", True):
+        creado["calidad"] = cal
+        return creado
     creado["calidad"] = cal
     return {"ok": True, **creado}

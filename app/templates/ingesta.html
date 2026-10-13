@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 {% block title %}Ingesta · Sistema Contable{% endblock %}
 {% block content %}
-<div class="card"><h2>Nueva ingesta</h2>
-<p>Sube facturas (JPG, PNG, PDF) o XML SIFEN. El sistema extrae, clasifica el rubro
-automáticamente y deja el comprobante <b>pendiente de revisión</b>.</p>
+<div class="card"><h2>Carga masiva de archivos</h2>
+<p class="ayuda">Para una sola factura paso a paso usa <a href="/cargar"><b>Cargar factura</b></a>.
+Aquí puedes subir muchos archivos a la vez (JPG, PNG, PDF o XML).</p>
 <form id="fing">
 <label>Cliente <select id="cli"></select></label>
 <label>Archivos <input id="files" type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.xml"></label>
 <button>Subir y procesar</button></form></div>
 <div class="card"><h2>Resultado</h2><pre id="out">—</pre>
-<p><a href="/auditoria/1">Ir a auditoría →</a></p></div>
+<p><a href="/comprobantes-ui">Ver comprobantes →</a></p></div>
 <div id="overlay"><div class="spinner"></div><p id="overlay-msg">Procesando…</p></div>
 <script>
 const out = document.getElementById('out');

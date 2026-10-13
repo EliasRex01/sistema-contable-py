@@ -39,6 +39,14 @@ def ingesta_ui(request: Request):
 def comprobantes_ui(request: Request):
     return templates.TemplateResponse(request, "comprobantes.html", {"activa": "comprobantes"})
 
+@router.get("/cargar", response_class=HTMLResponse)
+def cargar(request: Request):
+    return templates.TemplateResponse(request, "cargar.html", {"activa": "cargar"})
+
+@router.get("/clientes-ui", response_class=HTMLResponse)
+def clientes_ui(request: Request):
+    return templates.TemplateResponse(request, "clientes.html", {"activa": "clientes"})
+
 @router.get("/rg90-ui", response_class=HTMLResponse)
 def rg90_ui(request: Request):
     return templates.TemplateResponse(request, "rg90.html", {"activa": "rg90"})

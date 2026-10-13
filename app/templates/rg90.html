@@ -1,53 +1,78 @@
 {% extends "base.html" %}
 {% block title %}RG 90 · Sistema Contable{% endblock %}
 {% block content %}
-<div class="card"><h2>Exportar / presentar RG 90 Compras</h2>
-<form id="frg">
+<div class="card"><h2>Presentar el mes a la DNIT (RG 90 Compras)</h2>
+<div class="pasos"><div class="paso act" id="p1">1 · Elegir mes</div>
+<div class="paso" id="p2">2 · Revisar incluidas</div><div class="paso" id="p3">3 · Descargar y presentar</div></div>
+<p class="ayuda">Solo entran las facturas ya <b>confirmadas</b>. Si falta alguna, vuelve a <a href="/cargar">Cargar factura</a>.</p></div>
+<div class="card"><h2>1 · Elegir mes</h2>
 <label>Cliente <select id="cli"></select></label>
-<label>Periodo (YYYY-MM) <input id="per" value="2026-10"></label>
-<p><button id="bexp">Descargar TXT</button>
-<button id="bpre" type="button">Presentar en Marangatú</button></p></form></div>
-<div class="card"><h2>Lotes del cliente</h2>
+<label>Mes a presentar <input id="per" type="month" value="2026-10"></label>
+<p><button id="bver">Ver facturas incluidas</button></p></div>
+<div class="card" id="c2" style="display:none"><h2>2 · Facturas incluidas (<span id="n">0</span>)</h2>
+<table id="t"><tr><th>Número</th><th>Emisor</th><th>Fecha</th><th>Total</th></tr></table>
+<p class="ayuda" id="vacio" style="display:none">No hay facturas confirmadas para este mes. Confirma primero las pendientes.</p></div>
+<div class="card" id="c3" style="display:none"><h2>3 · Descargar y presentar</h2>
+<p class="ayuda">Primero descarga el archivo y guárdalo; luego preséntalo en Marangatú con el botón.</p>
+<p><button id="bexp">⬇ Descargar archivo TXT</button>
+<button id="bpre" type="button">⬆ Presentar en Marangatú</button></p>
+<div id="res"></div></div>
+<div class="card"><h2>Mis presentaciones</h2>
 <table id="tlotes"><tr><th>ID</th><th>Periodo</th><th>Estado</th><th>Lote DNIT</th></tr></table></div>
-<div class="card"><h2>Respuesta</h2><pre id="out">—</pre></div>
 <div id="overlay"><div class="spinner"></div><p id="overlay-msg">Procesando…</p></div>
 <script>
-const out = document.getElementById('out');
-const overlay = document.getElementById('overlay');
-const omsg = document.getElementById('overlay-msg');
+const overlay = document.getElementById('overlay'), omsg = document.getElementById('overlay-msg');
 function bloquear(on, msg){ overlay.classList.toggle('visible', on);
   if (msg) omsg.textContent = msg;
   document.querySelectorAll('button').forEach(b => b.disabled = on); }
+function paso(n){ [1,2,3].forEach(i => {
+  document.getElementById('p'+i).className = 'paso' + (i < n ? ' ok' : i === n ? ' act' : ''); }); }
+function per(){ return per.value.slice(0,7); }
 fetch('/clientes').then(r => r.json()).then(cs => {
   cli.innerHTML = cs.map(c => `<option value="${c.id}">${c.ruc} — ${c.razon}</option>`).join('');
   verLotes();
 });
 cli.onchange = verLotes;
-async function verLotes(){
-  const ls = await (await fetch('/rg90/lotes/' + cli.value)).json();
-  tlotes.innerHTML = '<tr><th>ID</th><th>Periodo</th><th>Estado</th><th>Lote DNIT</th></tr>' +
-    (ls.map(l => `<tr><td>${l.id}</td><td>${l.periodo}</td><td>${l.estado}</td><td>${l.lote_dnit || '—'}</td></tr>`).join('') || '<tr><td colspan="4">Sin lotes.</td></tr>');
-}
-bexp.onclick = async e => {
-  e.preventDefault(); bloquear(true, 'Generando TXT RG 90…');
+bver.onclick = async () => {
+  bloquear(true, 'Buscando facturas confirmadas…');
   try {
-    const r = await fetch(`/rg90/${cli.value}/${per.value}`);
-    const t = await r.text();
+    const rs = await (await fetch('/comprobantes/' + cli.value)).json();
+    const ok = rs.filter(r => r.estado === 'VALIDADO');
+    document.getElementById('n').textContent = ok.length;
+    t.innerHTML = '<tr><th>Número</th><th>Emisor</th><th>Fecha</th><th>Total</th></tr>' +
+      ok.map(r => `<tr><td><b>${r.nro||'—'}</b></td><td>${r.razon||r.ruc_emisor}</td><td>${r.fecha||''}</td><td>${r.total}</td></tr>`).join('');
+    vacio.style.display = ok.length ? 'none' : 'block';
+    c2.style.display = 'block'; c3.style.display = ok.length ? 'block' : 'none';
+    if (ok.length) paso(2);
+  } finally { bloquear(false); }
+};
+bexp.onclick = async () => {
+  bloquear(true, 'Generando archivo…');
+  try {
+    const r = await fetch(`/rg90/${cli.value}/${per()}`);
+    const txt = await r.text();
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([t], {type:'text/plain'}));
-    a.download = `RG90_${cli.value}_${per.value}.txt`; a.click();
-    out.textContent = `TXT generado (${t.split('\n').filter(x=>x).length} líneas).`;
-    verLotes();
-  } catch (err) { out.textContent = 'Error: ' + err; }
-  finally { bloquear(false); }
+    a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain'}));
+    a.download = `RG90_${cli.value}_${per()}.txt`; a.click();
+    res.innerHTML = '<div class="aviso-ok">Archivo descargado (' +
+      txt.split('\n').filter(x=>x).length + ' líneas). Ahora puedes presentarlo.</div>';
+    paso(3); verLotes();
+  } finally { bloquear(false); }
 };
 bpre.onclick = async () => {
-  bloquear(true, 'Presentando en Marangatú (RPA)… no cierres esta página.');
+  if (!confirm('¿Presentar el periodo ' + per() + ' en Marangatú?')) return;
+  bloquear(true, 'Presentando en Marangatú… no cierres esta página.');
   try {
-    const r = await fetch(`/rg90/${cli.value}/${per.value}/presentar`, {method:'POST'});
-    out.textContent = JSON.stringify(await r.json(), null, 2); verLotes();
-  } catch (err) { out.textContent = 'Error: ' + err; }
-  finally { bloquear(false); }
+    const j = await (await fetch(`/rg90/${cli.value}/${per()}/presentar`, {method:'POST'})).json();
+    res.innerHTML = '<div class="aviso-ok">Resultado: <pre>' + JSON.stringify(j, null, 2) + '</pre></div>';
+    paso(3); verLotes();
+  } finally { bloquear(false); }
 };
+async function verLotes(){
+  if (!cli.value) return;
+  const ls = await (await fetch('/rg90/lotes/' + cli.value)).json();
+  tlotes.innerHTML = '<tr><th>ID</th><th>Periodo</th><th>Estado</th><th>Lote DNIT</th></tr>' +
+    (ls.map(l => `<tr><td>${l.id}</td><td>${l.periodo}</td><td>${l.estado}</td><td>${l.lote_dnit || '—'}</td></tr>`).join('') || '<tr><td colspan="4">Sin presentaciones.</td></tr>');
+}
 </script>
 {% endblock %}

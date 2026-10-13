@@ -2,25 +2,33 @@
 {% block title %}Panel · Sistema Contable{% endblock %}
 {% block content %}
 <div class="card"><h2>Panel de control</h2>
-<p>Flujo automático: ingesta → extracción → clasificación → revisión → RG 90.
-Captcha DNIT: <span class="badge {{ 'on' if captcha.automatico else 'off' }}">{{ 'activo' if captcha.automatico else 'manual/HITL' }}</span></p></div>
+<p>Carga las facturas, revísalas y genera la presentación para la DNIT, todo paso a paso.
+Captcha DNIT: <span class="badge {{ 'on' if captcha.automatico else 'off' }}">{{ 'activo' if captcha.automatico else 'manual' }}</span></p></div>
 <div class="grid">
-  <div class="card"><h2>{{ s.clientes }}</h2><p>Clientes</p><a href="/docs#/clientes">gestionar →</a></div>
-  <div class="card"><h2>{{ s.pendientes }}</h2><p>Pendientes de revisión</p><a href="/auditoria/1">auditar →</a></div>
-  <div class="card"><h2>{{ s.validados }}</h2><p>Validados (Gs. {{ '{:,.0f}'.format(s.total_validado) }})</p><a href="/rg90-ui">generar RG 90 →</a></div>
-  <div class="card"><h2>{{ s.rechazados }}</h2><p>Rechazados</p><a href="/ingesta-ui">nueva ingesta →</a></div>
+  <div class="card"><h2>{{ s.clientes }}</h2><p>Clientes (contribuyentes)</p><a href="/clientes-ui">ver clientes →</a></div>
+  <div class="card"><h2>{{ s.pendientes }}</h2><p>Facturas por revisar</p><a href="/cargar">cargar factura →</a></div>
+  <div class="card"><h2>{{ s.validados }}</h2><p>Listas para DNIT (Gs. {{ '{:,.0f}'.format(s.total_validado) }})</p><a href="/rg90-ui">presentar RG 90 →</a></div>
+  <div class="card"><h2>{{ s.rechazados }}</h2><p>Rechazadas</p><a href="/comprobantes-ui">ver comprobantes →</a></div>
 </div>
+<div class="card"><h2>¿Qué hago ahora?</h2>
+<table><tr><th>Quiero…</th><th>Voy a…</th></tr>
+<tr><td>Cargar una factura nueva</td><td><a href="/cargar"><b>Cargar factura</b></a> (foto → revisar → confirmar)</td></tr>
+<tr><td>Ver o corregir comprobantes</td><td><a href="/comprobantes-ui"><b>Comprobantes</b></a></td></tr>
+<tr><td>Revisar facturas con su imagen</td><td><a href="/auditoria/1"><b>Auditoría</b></a></td></tr>
+<tr><td>Presentar el mes a la DNIT</td><td><a href="/rg90-ui"><b>RG 90</b></a></td></tr>
+<tr><td>Consultar un RUC o timbrado</td><td><a href="/validador"><b>Validador DNIT</b></a></td></tr></table></div>
 <div class="card"><h2>Últimos comprobantes</h2>
 <table><tr><th>ID</th><th>Número</th><th>Emisor</th><th>Rubro auto</th><th>Total</th><th>Estado</th></tr>
 {% for r in s.ultimos %}
 <tr><td>{{ r.id }}</td><td><b>{{ r.nro_comprobante or '—' }}</b></td>
 <td>{{ r.razon_emisor or r.ruc_emisor }}</td><td>{{ r.rubro or '—' }}</td><td>{{ r.total }}</td>
 <td><span class="badge {{ {'PENDIENTE':'off','VALIDADO':'on','RECHAZADO':'err'}.get(r.estado,'off') }}">{{ r.estado }}</span></td></tr>
+{% else %}<tr><td colspan="6">Todavía no hay comprobantes. <a href="/cargar">Carga la primera factura →</a></td></tr>
 {% endfor %}</table></div>
-<div class="card"><h2>Últimos lotes RG 90</h2>
+<div class="card"><h2>Últimas presentaciones RG 90</h2>
 <table><tr><th>ID</th><th>Cliente</th><th>Periodo</th><th>Estado</th><th>Lote DNIT</th></tr>
 {% for l in s.lotes %}
 <tr><td>{{ l.id }}</td><td>{{ l.cliente_id }}</td><td>{{ l.periodo }}</td><td>{{ l.estado }}</td><td>{{ l.nro_lote_dnit or '—' }}</td></tr>
-{% else %}<tr><td colspan="5">Sin lotes aún.</td></tr>
+{% else %}<tr><td colspan="5">Sin presentaciones aún.</td></tr>
 {% endfor %}</table></div>
 {% endblock %}

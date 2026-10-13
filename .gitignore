@@ -10,4 +10,5 @@ uploads/
 *.jpg
 *.db
 contable.db
+tessdata/
 pgdata/

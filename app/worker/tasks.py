@@ -13,14 +13,22 @@ def process_file(path: str, cliente_id: int = 0) -> dict:
     if low.endswith(".xml"):
         from app.modules.ingestion.xml_sifen import parse_sifen_xml
         data = parse_sifen_xml(path); fuente = "XML"
+        texto = "factura electronica " + " ".join(str(v) for v in data.values())
     elif low.endswith(".pdf"):
         text = pipeline.pdf_text_native(path)
         if len(text.strip()) < 50:
             text = "[PDF escaneado: rasterizar + ocr_image pendiente]"
         data = regex_py.extract_entities(text)
+        texto = text
     else:
         img = pipeline.preprocess_voucher(path)
-        data = regex_py.extract_entities(pipeline.ocr_image(img))
+        texto = pipeline.ocr_image(img)
+        data = regex_py.extract_entities(texto)
+    from app.modules.ingestion.documento import es_comprobante
+    ver = es_comprobante(texto, data)
+    if not ver["es_valido"]:
+        return {"ok": False, "codigo": "IMAGEN_NO_VALIDA", "fuente": fuente,
+                "mensaje": ver["mensaje"], "validacion": ver}
     if cliente_id:
         db = SessionLocal()
         try:
@@ -41,7 +49,7 @@ def process_file(path: str, cliente_id: int = 0) -> dict:
                              cli.obligaciones if cli else "211,715", float(c.total or 0))
             c.rubro = cls["rubro"]
             db.add(c); db.commit(); db.refresh(c)
-            return {"id": c.id, "fuente": fuente, "rubro": c.rubro,
+            return {"ok": True, "id": c.id, "fuente": fuente, "rubro": c.rubro,
                     "credito_iva": cls["credito_iva"], "egreso_irp": cls["egreso_irp"],
                     **{k: str(v) for k, v in data.items()}}
         finally:

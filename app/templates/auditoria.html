@@ -2,7 +2,8 @@
 {% block title %}Auditoría cliente {{ cliente_id }}{% endblock %}
 {% block content %}
 <div class="card"><h2>Auditoría visual — cliente {{ cliente_id }} ({{ rows|length }} comprobantes)</h2>
-<p>Izquierda: imagen del comprobante · Derecha: datos para validar antes de autorizar el envío a la DNIT.</p></div>
+<p>Izquierda: imagen del comprobante · Derecha: datos para validar antes de autorizar el envío a la DNIT.</p>
+<p class="ayuda">Para ver otro cliente, abre su auditoría desde <a href="/comprobantes-ui">Comprobantes</a>.</p></div>
 <div class="card"><h2>Comprobantes</h2>
 <table><tr><th>ID</th><th>Número</th><th>Emisor</th><th>Total</th><th>Estado</th><th>Imagen</th></tr>
 {% for r in rows %}

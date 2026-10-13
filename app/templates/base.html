@@ -9,9 +9,9 @@
 }
 *{box-sizing:border-box}
 body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--azul-50);color:var(--texto)}
-header{background:linear-gradient(90deg,var(--azul-900),var(--azul-500));color:#fff;padding:14px 28px;
-  display:flex;align-items:center;gap:20px;box-shadow:0 2px 6px rgba(10,42,94,.35)}
-header .logo{font-weight:700;font-size:1.15rem;letter-spacing:.5px}
+header{background:linear-gradient(90deg,var(--azul-900),var(--azul-500));color:#fff;padding:12px 24px;
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;box-shadow:0 2px 6px rgba(10,42,94,.35)}
+header .logo{font-weight:700;font-size:1.1rem;letter-spacing:.5px;white-space:nowrap}
 nav{display:flex;gap:6px;flex-wrap:wrap}
 nav a{color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:.95rem}
 nav a:hover,nav a.activo{background:rgba(255,255,255,.22)}
@@ -42,20 +42,32 @@ table{width:100%;border-collapse:collapse;font-size:.9rem}
 th{background:var(--azul-100);color:var(--azul-700);text-align:left;padding:8px}
 td{padding:8px;border-bottom:1px solid var(--azul-100)}
 footer{text-align:center;color:#5b7bb4;font-size:.8rem;padding:18px}
+footer a{color:var(--azul-500)}
+.ayuda{font-size:.85rem;color:#5b7bb4;margin:4px 0 10px}
+.pasos{display:flex;gap:8px;margin-bottom:14px}
+.paso{flex:1;text-align:center;padding:8px;border-radius:6px;background:var(--azul-100);color:var(--azul-700);font-size:.88rem}
+.paso.act{background:var(--azul-500);color:#fff;font-weight:600}
+.paso.ok{background:var(--ok);color:#fff}
+.aviso-error{border-top:4px solid var(--err);background:#fdecea;padding:14px;border-radius:8px;margin-bottom:16px}
+.aviso-ok{border-top:4px solid var(--ok);background:#e8f5e9;padding:14px;border-radius:8px;margin-bottom:16px}
 </style></head>
 <body>
 <header>
   <span class="logo">◈ ContablePY · IVA/IRP</span>
   <nav>
     <a href="/" class="{{ 'activo' if activa=='panel' else '' }}">Panel</a>
-    <a href="/ingesta-ui" class="{{ 'activo' if activa=='ingesta' else '' }}">Ingesta</a>
+    <a href="/cargar" class="{{ 'activo' if activa=='cargar' else '' }}">Cargar factura</a>
     <a href="/comprobantes-ui" class="{{ 'activo' if activa=='comprobantes' else '' }}">Comprobantes</a>
     <a href="/auditoria/1" class="{{ 'activo' if activa=='auditoria' else '' }}">Auditoría</a>
+    <a href="/clientes-ui" class="{{ 'activo' if activa=='clientes' else '' }}">Clientes</a>
     <a href="/rg90-ui" class="{{ 'activo' if activa=='rg90' else '' }}">RG 90</a>
     <a href="/validador" class="{{ 'activo' if activa=='validador' else '' }}">Validador DNIT</a>
-    <a href="/docs">API Docs</a>
   </nav>
 </header>
+<script>
+// Utilidades compartidas: lista de clientes para los selectores de cada página.
+async function clientesTodos(){ return (await fetch('/clientes')).json(); }
+</script>
 <main>{% block content %}{% endblock %}</main>
-<footer>DNIT · RG 90 / Marangatú — Sistema Contable IVA/IRP Paraguay</footer>
+<footer>DNIT · RG 90 / Marangatú — Sistema Contable IVA/IRP Paraguay · <a href="/docs">API técnica</a></footer>
 </body></html>

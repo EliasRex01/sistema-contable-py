@@ -39,6 +39,19 @@ def test_calidad():
     except ImportError:
         pass  # cv2 solo en venv; lógica verificada en servidor
 
+def test_documento():
+    from app.modules.ingestion.documento import es_comprobante, MENSAJE_NO_VALIDO
+    factura = "FACTURA RUC: 80012345-1 TIMBRADO 1234567890 001-002-0001234 15/03/2026 Total 1.100.000"
+    ent_ok = {"ruc_emisor": "80012345", "timbrado": "1234567890",
+              "nro_comprobante": "001-002-0001234", "fecha": "15/03/2026",
+              "grav10": 1100000.0, "grav5": 0.0, "exenta": 0.0, "total": 1100000.0}
+    assert es_comprobante(factura, ent_ok)["es_valido"]
+    foto_otra = "paisaje montañas vacaciones playa 2026"
+    ent_vacia = {"ruc_emisor": "", "timbrado": "", "nro_comprobante": "",
+                 "fecha": "", "grav10": 0.0, "grav5": 0.0, "exenta": 0.0, "total": 0.0}
+    r = es_comprobante(foto_otra, ent_vacia)
+    assert not r["es_valido"] and r["mensaje"].startswith(MENSAJE_NO_VALIDO)
+
 if __name__ == "__main__":
     for n, f in list(globals().items()):
         if n.startswith("test_"):
