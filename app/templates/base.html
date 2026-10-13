@@ -1,0 +1,61 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Sistema Contable IVA/IRP{% endblock %}</title>
+<style>
+:root{
+  --azul-900:#0a2a5e; --azul-700:#0b3d91; --azul-500:#1565c0; --azul-300:#5e92f3;
+  --azul-100:#e3f2fd; --azul-50:#f2f7fd; --acento:#0288d1; --texto:#1a2b4a;
+  --ok:#2e7d32; --err:#c62828;
+}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;margin:0;background:var(--azul-50);color:var(--texto)}
+header{background:linear-gradient(90deg,var(--azul-900),var(--azul-500));color:#fff;padding:14px 28px;
+  display:flex;align-items:center;gap:20px;box-shadow:0 2px 6px rgba(10,42,94,.35)}
+header .logo{font-weight:700;font-size:1.15rem;letter-spacing:.5px}
+nav{display:flex;gap:6px;flex-wrap:wrap}
+nav a{color:#fff;text-decoration:none;padding:8px 14px;border-radius:6px;font-size:.95rem}
+nav a:hover,nav a.activo{background:rgba(255,255,255,.22)}
+main{max-width:1000px;margin:24px auto;padding:0 16px}
+.card{background:#fff;border:1px solid #c9d9f2;border-top:4px solid var(--azul-500);
+  border-radius:8px;padding:18px;margin-bottom:16px;box-shadow:0 1px 4px rgba(11,61,145,.12)}
+h2{color:var(--azul-700);margin-top:0}
+label{display:block;margin:8px 0;font-size:.92rem}
+input,select{width:100%;padding:8px;border:1px solid #9db9e8;border-radius:6px}
+input:focus,select:focus{outline:2px solid var(--azul-300);border-color:var(--azul-500)}
+button{background:var(--azul-500);color:#fff;border:none;padding:10px 20px;border-radius:6px;
+  cursor:pointer;font-size:.95rem}
+button:hover{background:var(--azul-700)}
+pre{background:var(--azul-900);color:#d7e6ff;padding:12px;border-radius:6px;white-space:pre-wrap}
+#overlay{position:fixed;inset:0;background:rgba(10,42,94,.72);display:none;z-index:9999;
+  align-items:center;justify-content:center;flex-direction:column;gap:16px;color:#fff}
+#overlay.visible{display:flex}
+.spinner{width:56px;height:56px;border:6px solid rgba(255,255,255,.3);border-top-color:#fff;
+  border-radius:50%;animation:girar .9s linear infinite}
+@keyframes girar{to{transform:rotate(360deg)}}
+#overlay p{margin:0;font-size:1rem;max-width:440px;text-align:center}
+.badge{padding:4px 10px;border-radius:12px;font-size:.8rem;color:#fff;background:var(--acento)}
+.badge.off{background:#78909c}.badge.on{background:var(--ok)}.badge.err{background:var(--err)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.grid .card{text-align:center}
+.grid .card a{color:var(--azul-500);font-weight:600;text-decoration:none;font-size:1.05rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{background:var(--azul-100);color:var(--azul-700);text-align:left;padding:8px}
+td{padding:8px;border-bottom:1px solid var(--azul-100)}
+footer{text-align:center;color:#5b7bb4;font-size:.8rem;padding:18px}
+</style></head>
+<body>
+<header>
+  <span class="logo">◈ ContablePY · IVA/IRP</span>
+  <nav>
+    <a href="/" class="{{ 'activo' if activa=='panel' else '' }}">Panel</a>
+    <a href="/ingesta-ui" class="{{ 'activo' if activa=='ingesta' else '' }}">Ingesta</a>
+    <a href="/comprobantes-ui" class="{{ 'activo' if activa=='comprobantes' else '' }}">Comprobantes</a>
+    <a href="/auditoria/1" class="{{ 'activo' if activa=='auditoria' else '' }}">Auditoría</a>
+    <a href="/rg90-ui" class="{{ 'activo' if activa=='rg90' else '' }}">RG 90</a>
+    <a href="/validador" class="{{ 'activo' if activa=='validador' else '' }}">Validador DNIT</a>
+    <a href="/docs">API Docs</a>
+  </nav>
+</header>
+<main>{% block content %}{% endblock %}</main>
+<footer>DNIT · RG 90 / Marangatú — Sistema Contable IVA/IRP Paraguay</footer>
+</body></html>

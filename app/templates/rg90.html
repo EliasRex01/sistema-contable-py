@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}RG 90 · Sistema Contable{% endblock %}
+{% block content %}
+<div class="card"><h2>Exportar / presentar RG 90 Compras</h2>
+<form id="frg">
+<label>Cliente <select id="cli"></select></label>
+<label>Periodo (YYYY-MM) <input id="per" value="2026-10"></label>
+<p><button id="bexp">Descargar TXT</button>
+<button id="bpre" type="button">Presentar en Marangatú</button></p></form></div>
+<div class="card"><h2>Lotes del cliente</h2>
+<table id="tlotes"><tr><th>ID</th><th>Periodo</th><th>Estado</th><th>Lote DNIT</th></tr></table></div>
+<div class="card"><h2>Respuesta</h2><pre id="out">—</pre></div>
+<div id="overlay"><div class="spinner"></div><p id="overlay-msg">Procesando…</p></div>
+<script>
+const out = document.getElementById('out');
+const overlay = document.getElementById('overlay');
+const omsg = document.getElementById('overlay-msg');
+function bloquear(on, msg){ overlay.classList.toggle('visible', on);
+  if (msg) omsg.textContent = msg;
+  document.querySelectorAll('button').forEach(b => b.disabled = on); }
+fetch('/clientes').then(r => r.json()).then(cs => {
+  cli.innerHTML = cs.map(c => `<option value="${c.id}">${c.ruc} — ${c.razon}</option>`).join('');
+  verLotes();
+});
+cli.onchange = verLotes;
+async function verLotes(){
+  const ls = await (await fetch('/rg90/lotes/' + cli.value)).json();
+  tlotes.innerHTML = '<tr><th>ID</th><th>Periodo</th><th>Estado</th><th>Lote DNIT</th></tr>' +
+    (ls.map(l => `<tr><td>${l.id}</td><td>${l.periodo}</td><td>${l.estado}</td><td>${l.lote_dnit || '—'}</td></tr>`).join('') || '<tr><td colspan="4">Sin lotes.</td></tr>');
+}
+bexp.onclick = async e => {
+  e.preventDefault(); bloquear(true, 'Generando TXT RG 90…');
+  try {
+    const r = await fetch(`/rg90/${cli.value}/${per.value}`);
+    const t = await r.text();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([t], {type:'text/plain'}));
+    a.download = `RG90_${cli.value}_${per.value}.txt`; a.click();
+    out.textContent = `TXT generado (${t.split('\n').filter(x=>x).length} líneas).`;
+    verLotes();
+  } catch (err) { out.textContent = 'Error: ' + err; }
+  finally { bloquear(false); }
+};
+bpre.onclick = async () => {
+  bloquear(true, 'Presentando en Marangatú (RPA)… no cierres esta página.');
+  try {
+    const r = await fetch(`/rg90/${cli.value}/${per.value}/presentar`, {method:'POST'});
+    out.textContent = JSON.stringify(await r.json(), null, 2); verLotes();
+  } catch (err) { out.textContent = 'Error: ' + err; }
+  finally { bloquear(false); }
+};
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Ingesta · Sistema Contable{% endblock %}
+{% block content %}
+<div class="card"><h2>Nueva ingesta</h2>
+<p>Sube facturas (JPG, PNG, PDF) o XML SIFEN. El sistema extrae, clasifica el rubro
+automáticamente y deja el comprobante <b>pendiente de revisión</b>.</p>
+<form id="fing">
+<label>Cliente <select id="cli"></select></label>
+<label>Archivos <input id="files" type="file" multiple accept=".jpg,.jpeg,.png,.pdf,.xml"></label>
+<button>Subir y procesar</button></form></div>
+<div class="card"><h2>Resultado</h2><pre id="out">—</pre>
+<p><a href="/auditoria/1">Ir a auditoría →</a></p></div>
+<div id="overlay"><div class="spinner"></div><p id="overlay-msg">Procesando…</p></div>
+<script>
+const out = document.getElementById('out');
+const overlay = document.getElementById('overlay');
+function bloquear(on){ overlay.classList.toggle('visible', on);
+  document.querySelectorAll('button').forEach(b => b.disabled = on); }
+fetch('/clientes').then(r => r.json()).then(cs => {
+  cli.innerHTML = cs.map(c => `<option value="${c.id}">${c.ruc} — ${c.razon}</option>`).join('');
+});
+fing.onsubmit = async e => {
+  e.preventDefault();
+  const fd = new FormData();
+  for (const f of files.files) fd.append('files', f);
+  bloquear(true);
+  try {
+    const r = await fetch('/ingesta/' + cli.value, {method:'POST', body: fd});
+    out.textContent = JSON.stringify(await r.json(), null, 2);
+  } catch (err) { out.textContent = 'Error de red: ' + err; }
+  finally { bloquear(false); }
+};
+</script>
+{% endblock %}

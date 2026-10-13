@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Auditoría cliente {{ cliente_id }}{% endblock %}
+{% block content %}
+<div class="card"><h2>Auditoría visual — cliente {{ cliente_id }} ({{ rows|length }} comprobantes)</h2>
+<p>Izquierda: imagen del comprobante · Derecha: datos para validar antes de autorizar el envío a la DNIT.</p></div>
+<div class="card"><h2>Comprobantes</h2>
+<table><tr><th>ID</th><th>Número</th><th>Emisor</th><th>Total</th><th>Estado</th><th>Imagen</th></tr>
+{% for r in rows %}
+<tr><td>{{ r.id }}</td><td><b>{{ r.nro_comprobante }}</b></td><td>{{ r.razon_emisor }} ({{ r.ruc_emisor }})</td>
+<td>{{ r.total }}</td><td><span class="badge {{ {'PENDIENTE':'off','VALIDADO':'on','RECHAZADO':'err'}.get(r.estado,'off') }}">{{ r.estado }}</span></td>
+<td>{% if r.imagen_path %}<a href="/{{ r.imagen_path }}">ver</a>{% else %}—{% endif %}</td></tr>
+{% endfor %}</table></div>
+<div class="card"><h2>Revisión y autorización</h2>
+<form id="frev">
+<label>ID <input id="cid" value="{{ rows[0].id if rows else '' }}"></label>
+<label>RUC <input id="ruc"></label>
+<label>Timbrado <input id="tim"></label>
+<label>Nro (000-000-0000000) <input id="nro"></label>
+<label>Fecha <input id="fec" placeholder="DD/MM/YYYY"></label>
+<label>Grav10 <input id="g10" type="number"></label>
+<label>Grav5 <input id="g5" type="number"></label>
+<label>Exenta <input id="exe" type="number"></label>
+<label>Total <input id="tot" type="number"></label>
+<button>Validar y autorizar</button></form>
+<pre id="out">—</pre></div>
+<script>
+async function save(){
+ const id=document.getElementById('cid').value;
+ const body={ruc_emisor:ruc.value,timbrado:tim.value,nro_comprobante:nro.value,fecha:fec.value,
+  grav10:+g10.value||0,grav5:+g5.value||0,exenta:+exe.value||0,total:+tot.value||0,razon_emisor:'',rubro:''};
+ const r=await fetch('/comprobantes/'+id+'/revision',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+ out.textContent=await r.text();
+}
+frev.onsubmit = e => {e.preventDefault(); save();};
+</script>
+{% endblock %}

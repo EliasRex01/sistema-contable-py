@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Validador DNIT{% endblock %}
+{% block content %}
+<div class="card">
+<h2>Validador DNIT <span class="badge {{ 'on' if captcha.automatico else 'off' }}">
+{{ (captcha.provider + ' · activo') if captcha.automatico else 'captcha manual/HITL' }}</span></h2>
+<p>Consultas públicas sin clave, en headless. La respuesta muestra solo el veredicto.</p>
+</div>
+<div class="card"><h2>1. Perfil del contribuyente</h2>
+<form id="fperfil"><label>RUC sin DV <input id="ruc" value="5290956"></label>
+<button>Consultar perfil</button></form></div>
+<div class="card"><h2>2. Validez de documento</h2>
+<form id="fval">
+<label>RUC <input id="vruc" value="5290956"></label>
+<label>DV <input id="vdv" value="5"></label>
+<label>Nombre/Razón <input id="vnom" value="ZARACHO OVIEDO LUCAS HERNAN"></label>
+<label>Tipo <select id="vtipo"><option value="1">PREIMPRESOS</option><option value="2">AUTOIMPRESORES</option>
+<option value="3">MAQUINAS REGISTRADORAS</option><option value="4">COMPROBANTES VIRTUALES</option>
+<option value="5" selected>DOCUMENTOS ELECTRONICOS</option></select></label>
+<label>Tipo documento <input id="vtdoc" value="FACTURA ELECTRONICA"></label>
+<label>Timbrado <input id="vtim" value="18156046"></label>
+<label>Establecimiento <input id="vest" value="003"></label>
+<label>Punto de expedición <input id="vpun" value="001"></label>
+<label>Secuencia <input id="vsec" value="0001274"></label>
+<label>Fecha (DD/MM/YYYY) <input id="vfec" value="05/10/2026"></label>
+<button>Consultar validez</button></form></div>
+<div class="card"><h2>Respuesta</h2><pre id="out">—</pre></div>
+<div id="overlay"><div class="spinner"></div><p id="overlay-msg">Consultando DNIT…</p></div>
+<script>
+const out = document.getElementById('out');
+const overlay = document.getElementById('overlay');
+const overlayMsg = document.getElementById('overlay-msg');
+function bloquear(on, msg){
+  overlay.classList.toggle('visible', on);
+  if (msg) overlayMsg.textContent = msg;
+  document.querySelectorAll('button').forEach(b => b.disabled = on);
+}
+async function post(url, body){
+  bloquear(true, 'Consultando DNIT en headless… no cierres esta página (hasta ~2 min).');
+  out.textContent = '…';
+  try {
+    const r = await fetch(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    out.textContent = JSON.stringify(await r.json(), null, 2);
+  } catch (e) {
+    out.textContent = 'Error de red: ' + e;
+  } finally {
+    bloquear(false);
+  }
+}
+fperfil.onsubmit = e => {e.preventDefault(); post('/validador/perfil', {ruc: ruc.value});};
+fval.onsubmit = e => {e.preventDefault(); post('/validador/validez', {
+  ruc:vruc.value, dv:vdv.value, nombre:vnom.value, tipo_idx:+vtipo.value, tipo_doc:vtdoc.value,
+  timbrado:vtim.value, est:vest.value, punto:vpun.value, sec:vsec.value, fecha:vfec.value});};
+</script>
+{% endblock %}
