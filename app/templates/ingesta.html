@@ -21,6 +21,11 @@ fetch('/clientes').then(r => r.json()).then(cs => {
 });
 fing.onsubmit = async e => {
   e.preventDefault();
+  if (!files.files.length) {
+    out.textContent = '⚠ No se seleccionó ningún archivo para la carga. Elige al menos uno.';
+    files.focus();
+    return;
+  }
   const fd = new FormData();
   for (const f of files.files) fd.append('files', f);
   bloquear(true);
